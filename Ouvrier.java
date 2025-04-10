@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Ouvrier {
     protected String nom;
     protected String prenom;
@@ -20,5 +23,16 @@ public class Ouvrier {
 
     public float calculerSalaire() {
         return salaire;
+    }
+
+    // Méthode statique pour rechercher des ouvriers par nom ou métier
+    public static List<Ouvrier> rechercherOuvriers(List<Ouvrier> ouvriers, String critere) {
+        List<Ouvrier> resultats = new ArrayList<>();
+        for (Ouvrier ouvrier : ouvriers) {
+            if (ouvrier.nom.equalsIgnoreCase(critere) || ouvrier.getClass().getSimpleName().equalsIgnoreCase(critere)) {
+                resultats.add(ouvrier);
+            }
+        }
+        return resultats;
     }
 }
