@@ -8,10 +8,12 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
     private static final String FICHIER_JSON = "ouvriers.json";
     private static final Gson gson = new Gson();
+    private static final AtomicInteger idGenerator = new AtomicInteger(1); // Générateur d'ID unique
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -30,6 +32,14 @@ public class Main {
                     afficherOuvriers(ouvriers);
                     break;
                 case 3:
+                    modifierOuvrier(ouvriers, scanner);
+                    sauvegarderOuvriersDansJson(ouvriers);
+                    break;
+                case 4:
+                    supprimerOuvrier(ouvriers, scanner);
+                    sauvegarderOuvriersDansJson(ouvriers);
+                    break;
+                case 5:
                     System.out.println("Au revoir !");
                     return;
                 default:
@@ -43,7 +53,9 @@ public class Main {
         System.out.println("\nMenu :");
         System.out.println("1. Ajouter un ouvrier");
         System.out.println("2. Afficher les ouvriers");
-        System.out.println("3. Quitter");
+        System.out.println("3. Modifier un ouvrier");
+        System.out.println("4. Supprimer un ouvrier");
+        System.out.println("5. Quitter");
         System.out.print("Choisissez une option : ");
     }
 
@@ -77,6 +89,8 @@ public class Main {
         System.out.print("Âge : ");
         int age = scanner.nextInt();
         scanner.nextLine(); // Consomme la nouvelle ligne
+
+        int id = idGenerator.getAndIncrement(); // Génère un ID unique
 
         List<String> outilsDisponibles = obtenirOutilsDisponibles(type);
         if (outilsDisponibles.isEmpty()) {
@@ -114,22 +128,22 @@ public class Main {
             case 1:
                 System.out.print("Type de mur : ");
                 String typeDeMur = scanner.nextLine();
-                ouvriers.add(new Macon(nom, prenom, salaire, age, typeDeMur, outils));
+                ouvriers.add(new Macon(id, nom, prenom, salaire, age, typeDeMur, outils));
                 break;
             case 2:
                 System.out.print("Type de peinture : ");
                 String typeDePeinture = scanner.nextLine();
-                ouvriers.add(new Peintre(nom, prenom, salaire, age, typeDePeinture, outils));
+                ouvriers.add(new Peintre(id, nom, prenom, salaire, age, typeDePeinture, outils));
                 break;
             case 3:
                 System.out.print("Type de câblage : ");
                 String typeDeCablage = scanner.nextLine();
-                ouvriers.add(new Electricien(nom, prenom, salaire, age, typeDeCablage, outils));
+                ouvriers.add(new Electricien(id, nom, prenom, salaire, age, typeDeCablage, outils));
                 break;
             case 4:
                 System.out.print("Type de plomberie : ");
                 String typeDePlomberie = scanner.nextLine();
-                ouvriers.add(new Plombier(nom, prenom, salaire, age, typeDePlomberie, outils));
+                ouvriers.add(new Plombier(id, nom, prenom, salaire, age, typeDePlomberie, outils));
                 break;
             default:
                 System.out.println("Type d'ouvrier invalide.");
@@ -159,6 +173,7 @@ public class Main {
         } else {
             System.out.println("\nListe des ouvriers :");
             for (Ouvrier ouvrier : ouvriers) {
+                System.out.println("Type : " + ouvrier.getClass().getSimpleName()); // Affiche le type d'ouvrier
                 ouvrier.afficherInformations();
                 System.out.println();
             }
@@ -184,5 +199,59 @@ public class Main {
             System.out.println("Aucun fichier JSON trouvé. Une nouvelle liste sera créée.");
             return new ArrayList<>();
         }
+    }
+
+    private static void modifierOuvrier(List<Ouvrier> ouvriers, Scanner scanner) {
+        if (ouvriers.isEmpty()) {
+            System.out.println("\nAucun ouvrier à modifier.");
+            return;
+        }
+        afficherOuvriers(ouvriers);
+        System.out.print("Entrez l'index de l'ouvrier à modifier (1 à " + ouvriers.size() + ") : ");
+        int index = lireEntreeEntier(scanner) - 1;
+
+        if (index < 0 || index >= ouvriers.size()) {
+            System.out.println("Index invalide.");
+            return;
+        }
+
+        Ouvrier ouvrier = ouvriers.get(index);
+        System.out.println("Modification de l'ouvrier :");
+        System.out.print("Nom (" + ouvrier.getNom() + ") : ");
+        String nom = scanner.nextLine();
+        System.out.print("Prénom (" + ouvrier.getPrenom() + ") : ");
+        String prenom = scanner.nextLine();
+        System.out.print("Salaire (" + ouvrier.getSalaire() + ") : ");
+        float salaire = scanner.nextFloat();
+        System.out.print("Âge (" + ouvrier.getAge() + ") : ");
+        int age = scanner.nextInt();
+        scanner.nextLine(); // Consomme la nouvelle ligne
+
+        ouvrier.setNom(nom.isEmpty() ? ouvrier.getNom() : nom);
+        ouvrier.setPrenom(prenom.isEmpty() ? ouvrier.getPrenom() : prenom);
+        ouvrier.setSalaire(salaire);
+        ouvrier.setAge(age);
+
+        System.out.println("Ouvrier modifié avec succès.");
+    }
+
+    private static void supprimerOuvrier(List<Ouvrier> ouvriers, Scanner scanner) {
+        if (ouvriers.isEmpty()) {
+            System.out.println("\nAucun ouvrier à supprimer.");
+            return;
+        }
+        afficherOuvriers(ouvriers);
+        System.out.print("Entrez l'index de l'ouvrier à supprimer (1 à " + ouvriers.size() + ") : ");
+        int index = lireEntreeEntier(scanner);
+
+        // Validation stricte de l'index
+        if (index < 1 || index > ouvriers.size()) {
+            System.out.println("Index invalide. Veuillez entrer un nombre entre 1 et " + ouvriers.size() + ".");
+            return;
+        }
+
+        ouvriers.remove(index - 1); // Supprime l'ouvrier correspondant
+        idGenerator.decrementAndGet(); // Décrémente l'ID pour maintenir la continuité
+        System.out.println("Ouvrier supprimé avec succès.");
     }
 }
